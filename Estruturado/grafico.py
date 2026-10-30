@@ -23,6 +23,7 @@ def criar_interface() -> None:
         calcular_raizes,
         calcular_vertice,
         calcular_volume_revolucao,
+        obter_passo_a_passo_integral,
     )
 
     janela = tk.Tk()
@@ -43,6 +44,8 @@ def criar_interface() -> None:
     estilo.configure("Valor.TLabel", background="#17243a", foreground="#67e8f9",
                      font=("Segoe UI", 13, "bold"))
     estilo.configure("Acao.TButton", font=("Segoe UI", 10, "bold"), padding=10)
+    estilo.configure("TNotebook", background="#17243a", borderwidth=0)
+    estilo.configure("TNotebook.Tab", padding=(16, 8), font=("Segoe UI", 10, "bold"))
 
     cabecalho = ttk.Frame(janela, style="Card.TFrame", padding=(24, 18))
     cabecalho.pack(fill="x", padx=18, pady=(18, 10))
@@ -55,8 +58,12 @@ def criar_interface() -> None:
     conteudo.pack(fill="both", expand=True, padx=18, pady=(0, 18))
     controles = ttk.Frame(conteudo, style="Card.TFrame")
     controles.pack(side="left", fill="y", padx=(0, 18))
-    grafico_frame = ttk.Frame(conteudo, style="Card.TFrame")
-    grafico_frame.pack(side="right", fill="both", expand=True)
+    area_principal = ttk.Notebook(conteudo)
+    area_principal.pack(side="right", fill="both", expand=True)
+    visualizacao_frame = ttk.Frame(area_principal, style="Card.TFrame", padding=8)
+    integral_frame = ttk.Frame(area_principal, style="Card.TFrame", padding=14)
+    area_principal.add(visualizacao_frame, text="  Visualização  ")
+    area_principal.add(integral_frame, text="  Cálculo por integrais  ")
 
     entradas: dict[str, tk.StringVar] = {}
     for nome, valor in (("a", "1"), ("b", "2"), ("c", "-4")):
@@ -86,8 +93,23 @@ def criar_interface() -> None:
     figura = Figure(figsize=(8, 5), dpi=100, facecolor="#17243a")
     eixo_2d = figura.add_subplot(121)
     eixo_3d = figura.add_subplot(122, projection="3d")
-    canvas = FigureCanvasTkAgg(figura, master=grafico_frame)
+    canvas = FigureCanvasTkAgg(figura, master=visualizacao_frame)
     canvas.get_tk_widget().pack(fill="both", expand=True)
+    explicacao = tk.Text(
+        integral_frame,
+        wrap="word",
+        bg="#101827",
+        fg="#dbeafe",
+        insertbackground="#dbeafe",
+        relief="flat",
+        padx=18,
+        pady=16,
+        font=("Consolas", 11),
+    )
+    barra = ttk.Scrollbar(integral_frame, orient="vertical", command=explicacao.yview)
+    explicacao.configure(yscrollcommand=barra.set)
+    explicacao.pack(side="left", fill="both", expand=True)
+    barra.pack(side="right", fill="y")
 
     def formatar(valor: float) -> str:
         return f"{valor:.6g}"
@@ -117,6 +139,13 @@ def criar_interface() -> None:
         vertice_label.configure(text=f"Vértice: ({formatar(vertice[0])}, "
                                     f"{formatar(vertice[1])})")
         volume_label.configure(text=f"Volume: {formatar(volume)} u³")
+        explicacao.configure(state="normal")
+        explicacao.delete("1.0", "end")
+        explicacao.insert(
+            "1.0",
+            obter_passo_a_passo_integral(a, b, c, raizes, vertice, volume),
+        )
+        explicacao.configure(state="disabled")
         eixo_2d.clear()
         eixo_3d.clear()
         valores_x, valores_y = pontos
